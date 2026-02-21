@@ -1,4 +1,4 @@
-// Browser polyfills for Node.js APIs required by natural.js and pg-types
+// Browser polyfills for Node.js APIs
 import { Buffer } from 'buffer';
 import path from 'path-browserify';
 

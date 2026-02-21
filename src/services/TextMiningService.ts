@@ -1,8 +1,74 @@
-import natural from 'natural';
 import { removeStopwords } from 'stopword';
 import Sentiment from 'sentiment';
 
-const { TfIdf, WordTokenizer } = natural;
+// Browser-compatible TF-IDF implementation
+class SimpleTfIdf {
+  private documents: string[] = [];
+  private termFrequency: Map<number, Map<string, number>>[] = [];
+  private documentFrequency: Map<string, number> = new Map();
+
+  addDocument(text: string) {
+    const docIndex = this.documents.length;
+    this.documents.push(text);
+    
+    const terms = this.tokenize(text);
+    const termCount = new Map<string, number>();
+    
+    const uniqueTerms = new Set<string>();
+    
+    terms.forEach(term => {
+      termCount.set(term, (termCount.get(term) || 0) + 1);
+      uniqueTerms.add(term);
+    });
+    
+    this.termFrequency[docIndex] = termCount;
+    
+    uniqueTerms.forEach(term => {
+      this.documentFrequency.set(term, (this.documentFrequency.get(term) || 0) + 1);
+    });
+  }
+
+  listTerms(docIndex: number): Array<{ term: string; tfidf: number }> {
+    const termCount = this.termFrequency[docIndex];
+    if (!termCount) return [];
+    
+    const docTerms = this.tokenize(this.documents[docIndex]);
+    const totalTerms = docTerms.length;
+    const totalDocs = this.documents.length;
+    
+    const results: Array<{ term: string; tfidf: number }> = [];
+    
+    termCount.forEach((count, term) => {
+      const tf = count / totalTerms;
+      const df = this.documentFrequency.get(term) || 1;
+      const idf = Math.log(totalDocs / df);
+      const tfidf = tf * idf;
+      
+      results.push({ term, tfidf });
+    });
+    
+    return results.sort((a, b) => b.tfidf - a.tfidf);
+  }
+
+  private tokenize(text: string): string[] {
+    return text.toLowerCase()
+      .replace(/[^\w\s]/g, ' ')
+      .split(/\s+/)
+      .filter(token => token.length > 2);
+  }
+}
+
+// Simple word tokenizer
+class SimpleTokenizer {
+  tokenize(text: string): string[] | null {
+    if (!text) return null;
+    return text
+      .toLowerCase()
+      .replace(/[^\w\s\u0900-\u097F\u0980-\u09FF\u0B80-\u0BFF]/g, ' ')
+      .split(/\s+/)
+      .filter(token => token.length > 0);
+  }
+}
 
 interface TextMiningResult {
   keywords: Array<{ term: string; score: number; frequency: number }>;
@@ -43,8 +109,8 @@ interface SocialMediaPost {
 }
 
 export class TextMiningService {
-  private tfidf: InstanceType<typeof TfIdf>;
-  private tokenizer: InstanceType<typeof WordTokenizer>;
+  private tfidf: SimpleTfIdf;
+  private tokenizer: SimpleTokenizer;
   private sentiment: Sentiment;
   
   // Domain-specific maritime keyword dictionaries
@@ -72,8 +138,8 @@ export class TextMiningService {
   ];
   
   constructor() {
-    this.tfidf = new TfIdf();
-    this.tokenizer = new WordTokenizer();
+    this.tfidf = new SimpleTfIdf();
+    this.tokenizer = new SimpleTokenizer();
     this.sentiment = new Sentiment();
   }
   
