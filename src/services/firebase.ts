@@ -9,7 +9,7 @@ import { initializeApp } from 'firebase/app';
 
    // Replace with your actual Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyC4MVpInfv-6N-7JxpATe8KdpgsyRW5ZLY",
+  
   authDomain: "civicgo-3f964.firebaseapp.com",
   projectId: "civicgo-3f964",
   storageBucket: "civicgo-3f964.firebasestorage.app",
