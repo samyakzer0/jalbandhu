@@ -1,0 +1,104 @@
+/* IssuesMap styles for marker clusters and dark theme */
+
+/* Marker Cluster Styles */
+.marker-cluster-small {
+  background-color: rgba(59, 130, 246, 0.6);
+}
+
+.marker-cluster-small div {
+  background-color: rgba(59, 130, 246, 0.8);
+}
+
+.marker-cluster-medium {
+  background-color: rgba(234, 179, 8, 0.6);
+}
+
+.marker-cluster-medium div {
+  background-color: rgba(234, 179, 8, 0.8);
+}
+
+.marker-cluster-large {
+  background-color: rgba(239, 68, 68, 0.6);
+}
+
+.marker-cluster-large div {
+  background-color: rgba(239, 68, 68, 0.8);
+}
+
+.marker-cluster {
+  background-clip: padding-box;
+  border-radius: 20px;
+}
+
+.marker-cluster div {
+  width: 30px;
+  height: 30px;
+  margin-left: 5px;
+  margin-top: 5px;
+  text-align: center;
+  border-radius: 15px;
+  font: 12px "Helvetica Neue", Arial, Helvetica, sans-serif;
+  font-weight: bold;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.marker-cluster span {
+  line-height: 30px;
+}
+
+/* Dark theme for OpenStreetMap tiles */
+.map-dark-theme {
+  filter: invert(1) hue-rotate(180deg) brightness(95%) contrast(90%);
+}
+
+/* Custom marker styles */
+.custom-marker {
+  background: transparent;
+  border: none;
+}
+
+/* Popup styles enhancement */
+.leaflet-popup-content-wrapper {
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+.leaflet-popup-content {
+  margin: 16px !important;
+  line-height: 1.4 !important;
+}
+
+.leaflet-popup-tip {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Line clamp utility for descriptions */
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Responsive map controls */
+@media (max-width: 640px) {
+  .absolute.top-4.left-4 {
+    top: 8px;
+    left: 8px;
+  }
+  
+  .absolute.top-4.right-4 {
+    top: 8px;
+    right: 8px;
+  }
+  
+  .absolute.top-4.left-4 select,
+  .absolute.top-4.left-4 button {
+    font-size: 12px;
+    padding: 6px 8px;
+  }
+}

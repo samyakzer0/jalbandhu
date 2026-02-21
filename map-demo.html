@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nivaran - Interactive Map Demo</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .map-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .map-header {
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .map-wrapper {
+            height: 500px;
+            position: relative;
+        }
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+        .controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .control-btn {
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+        }
+        .control-btn:hover {
+            background-color: #f9fafb;
+        }
+        .feature-grid {
+            max-width: 1200px;
+            margin: 30px auto 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .feature-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .feature-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #1f2937;
+        }
+        .feature-desc {
+            color: #6b7280;
+            line-height: 1.5;
+        }
+        .marker-cluster {
+            background-clip: padding-box;
+            border-radius: 20px;
+        }
+        .marker-cluster-small {
+            background-color: rgba(59, 130, 246, 0.6);
+        }
+        .marker-cluster-small div {
+            background-color: rgba(59, 130, 246, 0.8);
+            width: 30px;
+            height: 30px;
+            margin-left: 5px;
+            margin-top: 5px;
+            text-align: center;
+            border-radius: 15px;
+            color: white;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Nivaran - Interactive Issues Map</h1>
+        <p>Live demonstration of the map features with OpenStreetMap integration</p>
+    </div>
+
+    <div class="map-container">
+        <div class="map-header">
+            <h2>Live Issues Visualization</h2>
+            <p>Interactive map showing community issues with real-time updates, clustering, and heatmaps</p>
+        </div>
+        
+        <div class="map-wrapper">
+            <div class="controls">
+                <button class="control-btn" onclick="toggleHeatmap()">🔥 Toggle Heatmap</button>
+                <select class="control-btn" onchange="filterByCategory(this.value)">
+                    <option value="all">All Categories</option>
+                    <option value="infrastructure">Infrastructure</option>
+                    <option value="cleanliness">Cleanliness</option>
+                    <option value="safety">Safety</option>
+                    <option value="utilities">Utilities</option>
+                </select>
+                <button class="control-btn" onclick="centerOnUser()">📍 My Location</button>
+            </div>
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <div class="feature-grid">
+        <div class="feature-card">
+            <div class="feature-title">🗺️ OpenStreetMap Integration</div>
+            <div class="feature-desc">
+                Free, open-source map tiles with no API key requirements or usage limits.
+            </div>
+        </div>
+        
+        <div class="feature-card">
+            <div class="feature-title">🔥 Real-time Updates</div>
+            <div class="feature-desc">
+                Live data synchronization using Supabase subscriptions for instant issue updates.
+            </div>
+        </div>
+        
+        <div class="feature-card">
+            <div class="feature-title">📍 Smart Clustering</div>
+            <div class="feature-desc">
+                Automatic marker grouping to handle large datasets efficiently with clean UX.
+            </div>
+        </div>
+        
+        <div class="feature-card">
+            <div class="feature-title">🌡️ Issue Heatmaps</div>
+            <div class="feature-desc">
+                Density visualization showing concentration areas of community issues across the city.
+            </div>
+        </div>
+        
+        <div class="feature-card">
+            <div class="feature-title">🎯 Interactive Popups</div>
+            <div class="feature-desc">
+                Detailed issue information with status indicators and direct navigation links.
+            </div>
+        </div>
+        
+        <div class="feature-card">
+            <div class="feature-title">📱 Mobile Responsive</div>
+            <div class="feature-desc">
+                Optimized for all devices with touch-friendly controls and adaptive layouts.
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    
+    <script>
+        // Initialize map centered on Delhi (default location)
+        const map = L.map('map').setView([28.7041, 77.1025], 12);
+        
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        // Sample issue data for demonstration
+        const sampleIssues = [
+            {
+                id: 1,
+                lat: 28.7041,
+                lng: 77.1025,
+                title: "Pothole on Main Road",
+                description: "Large pothole causing traffic issues",
+                status: "Reported",
+                priority: "High",
+                category: "infrastructure",
+                created_at: "2024-01-15T10:30:00Z"
+            },
+            {
+                id: 2,
+                lat: 28.7128,
+                lng: 77.1094,
+                title: "Broken Streetlight",
+                description: "Streetlight not working since last week",
+                status: "In Review",
+                priority: "Medium",
+                category: "utilities",
+                created_at: "2024-01-14T15:45:00Z"
+            },
+            {
+                id: 3,
+                lat: 28.6953,
+                lng: 77.0982,
+                title: "Garbage Collection Issue",
+                description: "Garbage not collected for 3 days",
+                status: "Resolved",
+                priority: "Low",
+                category: "cleanliness",
+                created_at: "2024-01-13T09:20:00Z"
+            },
+            {
+                id: 4,
+                lat: 28.7200,
+                lng: 77.1150,
+                title: "Safety Concern at Park",
+                description: "Poor lighting and security at local park",
+                status: "Forwarded",
+                priority: "High",
+                category: "safety",
+                created_at: "2024-01-12T18:30:00Z"
+            }
+        ];
+        
+        // Marker cluster group
+        const markers = L.markerClusterGroup();
+        let heatmapLayer = null;
+        let showingHeatmap = false;
+        
+        // Color mapping for status and priority
+        const statusColors = {
+            'Reported': '#3b82f6',
+            'In Review': '#eab308',
+            'Forwarded': '#8b5cf6',
+            'Resolved': '#22c55e'
+        };
+        
+        const priorityColors = {
+            'High': '#ef4444',
+            'Medium': '#f97316',
+            'Low': '#22c55e'
+        };
+        
+        // Category icons
+        const categoryIcons = {
+            'infrastructure': '🛠️',
+            'cleanliness': '🧹',
+            'safety': '🚨',
+            'utilities': '💡'
+        };
+        
+        // Create custom marker icon
+        function createCustomIcon(issue) {
+            const statusColor = statusColors[issue.status] || '#6b7280';
+            const priorityColor = priorityColors[issue.priority] || '#6b7280';
+            const categoryIcon = categoryIcons[issue.category] || '📍';
+            
+            return L.divIcon({
+                html: `
+                    <div style="
+                        position: relative;
+                        width: 30px;
+                        height: 30px;
+                    ">
+                        <div style="
+                            width: 30px;
+                            height: 30px;
+                            background-color: ${statusColor};
+                            border: 3px solid white;
+                            border-radius: 50%;
+                            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-size: 12px;
+                        ">
+                            ${categoryIcon}
+                        </div>
+                        <div style="
+                            position: absolute;
+                            bottom: -2px;
+                            right: -2px;
+                            width: 12px;
+                            height: 12px;
+                            background-color: ${priorityColor};
+                            border: 2px solid white;
+                            border-radius: 50%;
+                            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+                        "></div>
+                    </div>
+                `,
+                className: 'custom-marker',
+                iconSize: [30, 30],
+                iconAnchor: [15, 15],
+                popupAnchor: [0, -15]
+            });
+        }
+        
+        // Add markers to map
+        function addMarkers(issues = sampleIssues) {
+            markers.clearLayers();
+            
+            issues.forEach(issue => {
+                const marker = L.marker([issue.lat, issue.lng], {
+                    icon: createCustomIcon(issue)
+                });
+                
+                const popupContent = `
+                    <div style="min-width: 250px; max-width: 300px;">
+                        <div style="display: flex; align-items: start; gap: 12px; margin-bottom: 12px;">
+                            <span style="font-size: 24px;">${categoryIcons[issue.category] || '📍'}</span>
+                            <div style="flex: 1;">
+                                <h3 style="font-weight: bold; margin: 0 0 4px 0; color: #1f2937;">
+                                    ${issue.title}
+                                </h3>
+                                <div style="display: flex; gap: 4px; margin-bottom: 8px;">
+                                    <span style="
+                                        background-color: ${statusColors[issue.status]}20;
+                                        color: ${statusColors[issue.status]};
+                                        padding: 2px 8px;
+                                        border-radius: 12px;
+                                        font-size: 12px;
+                                        font-weight: 500;
+                                    ">${issue.status}</span>
+                                    <span style="
+                                        background-color: ${priorityColors[issue.priority]}20;
+                                        color: ${priorityColors[issue.priority]};
+                                        padding: 2px 8px;
+                                        border-radius: 12px;
+                                        font-size: 12px;
+                                        font-weight: 500;
+                                    ">${issue.priority}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <p style="color: #4b5563; margin: 0 0 12px 0; font-size: 14px;">
+                            ${issue.description}
+                        </p>
+                        
+                        <div style="color: #6b7280; font-size: 12px; margin-bottom: 12px;">
+                            <p style="margin: 0;">📅 ${new Date(issue.created_at).toLocaleDateString()}</p>
+                        </div>
+                        
+                        <button style="
+                            width: 100%;
+                            background-color: #3b82f6;
+                            color: white;
+                            border: none;
+                            padding: 8px 16px;
+                            border-radius: 6px;
+                            font-size: 14px;
+                            font-weight: 500;
+                            cursor: pointer;
+                            transition: background-color 0.2s;
+                        " onclick="alert('Navigate to issue details: ${issue.title}')"
+                        onmouseover="this.style.backgroundColor='#2563eb'"
+                        onmouseout="this.style.backgroundColor='#3b82f6'">
+                            View Details
+                        </button>
+                    </div>
+                `;
+                
+                marker.bindPopup(popupContent);
+                markers.addLayer(marker);
+            });
+            
+            map.addLayer(markers);
+        }
+        
+        // Toggle heatmap
+        function toggleHeatmap() {
+            if (showingHeatmap) {
+                if (heatmapLayer) {
+                    map.removeLayer(heatmapLayer);
+                }
+                showingHeatmap = false;
+            } else {
+                const heatmapData = sampleIssues.map(issue => [
+                    issue.lat, 
+                    issue.lng, 
+                    issue.priority === 'High' ? 1.0 : issue.priority === 'Medium' ? 0.6 : 0.3
+                ]);
+                
+                heatmapLayer = L.heatLayer(heatmapData, {
+                    radius: 20,
+                    blur: 15,
+                    maxZoom: 17,
+                    max: 1.0,
+                    minOpacity: 0.4,
+                    gradient: {
+                        0.4: '#3b82f6',
+                        0.6: '#eab308', 
+                        0.8: '#f97316',
+                        1.0: '#ef4444'
+                    }
+                });
+                
+                map.addLayer(heatmapLayer);
+                showingHeatmap = true;
+            }
+        }
+        
+        // Filter by category
+        function filterByCategory(category) {
+            const filteredIssues = category === 'all' ? 
+                sampleIssues : 
+                sampleIssues.filter(issue => issue.category === category);
+            addMarkers(filteredIssues);
+        }
+        
+        // Center on user location
+        function centerOnUser() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    position => {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        map.setView([lat, lng], 15);
+                        
+                        L.marker([lat, lng])
+                            .addTo(map)
+                            .bindPopup('Your Location')
+                            .openPopup();
+                    },
+                    error => {
+                        alert('Could not get your location. Using default location.');
+                    }
+                );
+            } else {
+                alert('Geolocation is not supported by this browser.');
+            }
+        }
+        
+        // Initialize markers
+        addMarkers();
+        
+        // Fit map to show all markers
+        if (sampleIssues.length > 0) {
+            const group = new L.featureGroup(markers.getLayers());
+            map.fitBounds(group.getBounds().pad(0.1));
+        }
+    </script>
+</body>
+</html>
